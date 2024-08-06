@@ -353,7 +353,7 @@ class FunkinLua {
 			}
 		});*/
 		Lua_helper.add_callback(lua, "isRunning", function(file:String, ?checkForHaxe:Bool = false) {
-			var foundScript:String = findScript(file, (checkForHaxe ? '.hx' : 'lua'));
+			var foundScript:String = findScript(file, (checkForHaxe ? '.hx' : '.lua'));
 			if (foundScript != null) {
 				if (checkForHaxe) {
 					for (hscriptInstance in game.hscriptArray)
@@ -469,10 +469,16 @@ class FunkinLua {
 
 			FlxG.sound.music.pause();
 			FlxG.sound.music.volume = 0;
-			if(game != null && game.vocals != null)
-			{
-				game.vocals.pause();
-				game.vocals.volume = 0;
+			if(game != null) {
+				if (game.vocals != null) {
+					game.vocals.pause();
+					game.vocals.volume = 0;
+				}
+
+				if (game.opponentVocals != null) {
+					game.opponentVocals.pause();
+					game.opponentVocals.volume = 0;
+				}
 			}
 			FlxG.camera.followLerp = 0;
 		});
@@ -513,7 +519,7 @@ class FunkinLua {
 			}
 
 			if(leObj != null) {
-				var groupObj:Dynamic = LuaUtils.getObjectDirectly(group);
+				var groupObj:FlxTypedGroup = LuaUtils.getObjectDirectly(group);
 				if (groupObj == null) groupObj = LuaUtils.getTargetInstance();
 
 				return groupObj.members.indexOf(leObj);
@@ -529,7 +535,7 @@ class FunkinLua {
 			}
 
 			if(leObj != null) {
-				var groupObj:Dynamic = LuaUtils.getObjectDirectly(group);
+				var groupObj:FlxTypedGroup = LuaUtils.getObjectDirectly(group);
 				if (groupObj == null) groupObj = LuaUtils.getTargetInstance();
 
 				groupObj.remove(leObj, true);
@@ -881,7 +887,7 @@ class FunkinLua {
 
 		Lua_helper.add_callback(lua, "getMidpointX", function(variable:String) {
 			var split:Array<String> = variable.split('.');
-			var obj:FlxSprite = LuaUtils.getObjectDirectly(split[0]);
+			var obj:FlxObject = LuaUtils.getObjectDirectly(split[0]);
 			if(split.length > 1) {
 				obj = LuaUtils.getVarInArray(LuaUtils.getPropertyLoop(split), split[split.length-1]);
 			}
@@ -891,7 +897,7 @@ class FunkinLua {
 		});
 		Lua_helper.add_callback(lua, "getMidpointY", function(variable:String) {
 			var split:Array<String> = variable.split('.');
-			var obj:FlxSprite = LuaUtils.getObjectDirectly(split[0]);
+			var obj:FlxObject = LuaUtils.getObjectDirectly(split[0]);
 			if(split.length > 1) {
 				obj = LuaUtils.getVarInArray(LuaUtils.getPropertyLoop(split), split[split.length-1]);
 			}
@@ -921,7 +927,7 @@ class FunkinLua {
 		});
 		Lua_helper.add_callback(lua, "getScreenPositionX", function(variable:String, ?camera:String) {
 			var split:Array<String> = variable.split('.');
-			var obj:FlxSprite = LuaUtils.getObjectDirectly(split[0]);
+			var obj:FlxObject = LuaUtils.getObjectDirectly(split[0]);
 			var cam:FlxCamera = LuaUtils.cameraFromString(camera);
 			if(split.length > 1) {
 				obj = LuaUtils.getVarInArray(LuaUtils.getPropertyLoop(split), split[split.length-1]);
@@ -932,7 +938,7 @@ class FunkinLua {
 		});
 		Lua_helper.add_callback(lua, "getScreenPositionY", function(variable:String, ?camera:String) {
 			var split:Array<String> = variable.split('.');
-			var obj:FlxSprite = LuaUtils.getObjectDirectly(split[0]);
+			var obj:FlxObject = LuaUtils.getObjectDirectly(split[0]);
 			var cam:FlxCamera = LuaUtils.cameraFromString(camera);
 			if(split.length > 1) {
 				obj = LuaUtils.getVarInArray(LuaUtils.getPropertyLoop(split), split[split.length-1]);
@@ -1111,7 +1117,12 @@ class FunkinLua {
 				return;
 			}
 
-			var poop:FlxSprite = Reflect.getProperty(LuaUtils.getTargetInstance(), obj);
+			var split:Array<String> = obj.split('.');
+			var poop:FlxSprite = LuaUtils.getObjectDirectly(split[0]);
+			if(split.length > 1) {
+				poop = LuaUtils.getVarInArray(LuaUtils.getPropertyLoop(split), split[split.length-1]);
+			}
+
 			if(poop != null) {
 				poop.updateHitbox();
 				return;
@@ -1184,7 +1195,7 @@ class FunkinLua {
 			}
 
 			var split:Array<String> = obj.split('.');
-			var object:FlxSprite = LuaUtils.getObjectDirectly(split[0]);
+			var object:FlxBasic = LuaUtils.getObjectDirectly(split[0]);
 			if(split.length > 1) {
 				object = LuaUtils.getVarInArray(LuaUtils.getPropertyLoop(split), split[split.length-1]);
 			}
@@ -1217,7 +1228,7 @@ class FunkinLua {
 			return false;
 		});
 		Lua_helper.add_callback(lua, "screenCenter", function(obj:String, pos:String = 'xy') {
-			var spr:FlxSprite = game.getLuaObject(obj);
+			var spr:FlxObject = game.getLuaObject(obj);
 
 			if(spr==null){
 				var split:Array<String> = obj.split('.');
