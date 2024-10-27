@@ -10,10 +10,9 @@ class CustomSubstate extends MusicBeatSubstate
 	#if LUA_ALLOWED
 	public static function implement(funk:FunkinLua)
 	{
-		var lua = funk.lua;
-		Lua_helper.add_callback(lua, "openCustomSubstate", openCustomSubstate);
-		Lua_helper.add_callback(lua, "closeCustomSubstate", closeCustomSubstate);
-		Lua_helper.add_callback(lua, "insertToCustomSubstate", insertToCustomSubstate);
+		funk.set("openCustomSubstate", openCustomSubstate);
+		funk.set("closeCustomSubstate", closeCustomSubstate);
+		funk.set("insertToCustomSubstate", insertToCustomSubstate);
 	}
 	#end
 	
@@ -28,11 +27,10 @@ class CustomSubstate extends MusicBeatSubstate
 			if(FlxG.sound.music != null) {
 				FlxG.sound.music.pause();
 				PlayState.instance.vocals.pause();
+				PlayState.instance.opponentVocals.pause();
 			}
 		}
 		PlayState.instance.openSubState(new CustomSubstate(name));
-		PlayState.instance.setOnHScript('customSubstate', instance);
-		PlayState.instance.setOnHScript('customSubstateName', name);
 	}
 
 	public static function closeCustomSubstate()
@@ -40,7 +38,6 @@ class CustomSubstate extends MusicBeatSubstate
 		if(instance != null)
 		{
 			PlayState.instance.closeSubState();
-			instance = null;
 			return true;
 		}
 		return false;
@@ -50,8 +47,23 @@ class CustomSubstate extends MusicBeatSubstate
 	{
 		if(instance != null)
 		{
-			var tagObject:FlxObject = cast (PlayState.instance.variables.get(tag), FlxObject);
-			#if LUA_ALLOWED if(tagObject == null) tagObject = cast (PlayState.instance.modchartSprites.get(tag), FlxObject); #end
+			var tagObject:FlxObject = cast (MusicBeatState.getVariables().get(tag), FlxObject);
+
+			if(tagObject != null)
+			{
+				if(pos < 0) instance.add(tagObject);
+				else instance.insert(pos, tagObject);
+				return true;
+			}
+		}
+		return false;
+	}
+
+	public static function insertLuaTpad(?pos:Int = -1)
+	{
+		if(instance != null)
+		{
+			var tagObject:FlxObject = PlayState.instance.luaTouchPad;
 
 			if(tagObject != null)
 			{
@@ -66,6 +78,8 @@ class CustomSubstate extends MusicBeatSubstate
 	override function create()
 	{
 		instance = this;
+		PlayState.instance.setOnHScript('customSubstate', instance);
+
 
 		PlayState.instance.callOnScripts('onCustomSubstateCreate', [name]);
 		super.create();
@@ -75,6 +89,7 @@ class CustomSubstate extends MusicBeatSubstate
 	public function new(name:String)
 	{
 		CustomSubstate.name = name;
+		PlayState.instance.setOnHScript('customSubstateName', name);
 		super();
 		cameras = [FlxG.cameras.list[FlxG.cameras.list.length - 1]];
 	}
@@ -89,6 +104,7 @@ class CustomSubstate extends MusicBeatSubstate
 	override function destroy()
 	{
 		PlayState.instance.callOnScripts('onCustomSubstateDestroy', [name]);
+		instance = null;
 		name = 'unnamed';
 
 		PlayState.instance.setOnHScript('customSubstate', null);
